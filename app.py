@@ -95,9 +95,9 @@ def pagina_adicionar():
             try:
                 data_nasc_str = data_nasc_dt.strftime('%Y-%m-%d')
                 p = Pessoa(nome, filiacao1, filiacao2, data_nasc_str, doc_identidade,
-                           nacionalidade, telefone, email,
-                           endereco_residencial, endereco_trabalho, cpf, 
-                           id_beneficiario=None) # ID é None na criação
+                            nacionalidade, telefone, email,
+                            endereco_residencial, endereco_trabalho, cpf, 
+                            id_beneficiario=None) # ID é None na criação
 
                 id_gerado = inserir_beneficiario(p)
                 st.success(f'Pessoa {p.nome} cadastrada com sucesso (ID {id_gerado})')
@@ -136,8 +136,8 @@ def pagina_gerenciar():
         
         # Seleção de usuário
         opcao_selecionada = st.selectbox('Selecione um beneficiário para editar ou excluir:', 
-                                         options=['Selecione...'] + opcoes,
-                                         key='select_gerenciar')
+                                            options=['Selecione...'] + opcoes,
+                                            key='select_gerenciar')
         
         if opcao_selecionada != 'Selecione...':
             id_selecionado = int(opcao_selecionada.split(' - ')[0])
