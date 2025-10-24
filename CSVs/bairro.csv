@@ -1,0 +1,6 @@
+id_bairro,nome,fk_cidade_id_cidade
+1,Centro,1
+2,Trindade,1
+3,Campeche,1
+4,Ingleses do Rio Vermelho,1
+5,Canasvieiras,1

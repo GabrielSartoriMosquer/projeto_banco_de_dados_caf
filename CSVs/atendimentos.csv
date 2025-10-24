@@ -1,0 +1,21 @@
+id_atendimento,data,hora,observacao,fk_beneficiarios_id_beneficiario,fk_atendentes_id_atendente
+1,2025-09-22,09:30:00,"Primeiro contato, agendado retorno.",1,1
+2,2025-09-22,10:00:00,Verificação de documentos.,2,2
+3,2025-09-22,11:15:00,Pendente entregar comprovante.,3,3
+4,2025-09-23,08:45:00,Solicitação de informações.,4,1
+5,2025-09-23,09:00:00,Análise de cadastro.,5,2
+6,2025-09-23,10:30:00,Documentação OK.,6,1
+7,2025-09-23,11:00:00,Encaminhado para setor responsável.,7,3
+8,2025-09-24,14:00:00,Retorno para assinatura.,8,2
+9,2025-09-24,14:30:00,Cadastro finalizado com sucesso.,9,1
+10,2025-09-24,15:00:00,Tirou dúvidas sobre o processo.,10,3
+11,2025-09-24,16:00:00,Atualização de dados cadastrais.,11,2
+12,2025-09-25,09:00:00,Entregou documentação pendente.,12,1
+13,2025-09-25,09:45:00,Consulta sobre andamento.,13,1
+14,2025-09-25,10:15:00,Solicitou cópia do protocolo.,14,3
+15,2025-09-25,11:30:00,Informações gerais.,15,2
+16,2025-09-26,08:30:00,Agendamento de nova visita.,16,2
+17,2025-09-26,09:00:00,Verificação de endereço comercial.,17,3
+18,2025-09-26,10:00:00,Aguardando liberação.,18,1
+19,2025-09-26,10:45:00,Protocolo aberto.,19,1
+20,2025-09-26,11:00:00,Finalização do atendimento.,20,2

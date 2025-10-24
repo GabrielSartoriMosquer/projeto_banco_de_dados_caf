@@ -1,0 +1,21 @@
+numero,nome_logradouro,CEP,complemento,id_endereco,fk_bairro_id_bairro,fk_tipo_logradouro_id_tipo_logradouro
+100,Felipe Schmidt,88010001,Apto 101,1,1,1
+2050,Lauro Linhares,88036002,Bloco A,2,2,2
+300,Pequeno Príncipe,88063000,Casa,3,3,2
+450,das Gaivotas,88058100,Fundos,4,4,1
+120,das Nações,88054010,Sala 3,5,5,2
+220,Conselheiro Mafra,88010101,Apto 202,6,1,1
+1500,Madre Benvenuta,88035000,Casa 5,7,2,2
+80,dos Eucaliptos,88063100,Perto da praia,8,3,3
+1800,Intendente João Nunes Vieira,88058500,Loja 1,9,4,1
+330,Maria Villarim,88054601,Apto 5B,10,5,1
+50,Deodoro,88010020,Sobreloja,11,1,1
+1234,Córrego Grande,88037000,Apto 301,12,2,1
+2500,Avenida Campeche,88065000,,13,3,2
+670,Dário Manoel Cardoso,88058400,Casa Amarela,14,4,1
+90,Manoel de Menezes,88054300,,15,5,3
+300,Tenente Silveira,88010300,Andar 4,16,1,1
+555,João Pio Duarte Silva,88037001,"Bloco C, Apto 10",17,2,1
+199,do Gramal,88065160,,18,3,1
+700,Dom João Becker,88058075,Apto 707,19,4,1
+12,dos Lordes,88054520,Casa Verde,20,5,1
