@@ -4,7 +4,12 @@ import datetime
 import pandas as pd
 from pessoa import Pessoa
 from db import (
-    inicializar_banco, 
+    inicializar_banco, p_atualizada = Pessoa(
+                            nome, filiacao1, filiacao2, data_nasc_str, doc_identidade,
+                            nacionalidade, telefone, email,
+                            endereco_residencial, endereco_trabalho, # <--- CORRIGIDO
+                            cpf, id_beneficiario=id_selecionado 
+                        )
     inserir_beneficiario, 
     listar_beneficiarios,
     buscar_beneficiario_por_id,
@@ -17,16 +22,11 @@ st.set_page_config(layout="wide")
 
 if 'pagina' not in st.session_state:
     st.session_state['pagina'] = 'inicial'
-if 'db_inicializado' not in st.session_state:
-    st.session_state['db_inicializado'] = False
 
-if not st.session_state['db_inicializado']:
-    try:
-        inicializar_banco()
-        st.session_state['db_inicializado'] = True
-        print('Banco inicializado com sucesso.')
-    except Exception as e:
-        st.sidebar.error(f'Erro ao inicializar banco: {e}')
+try:
+    inicializar_banco()
+except Exception as e:
+    st.sidebar.error(f"Erro ao conectar com o banco: {e}")
 
 if 'pagina' not in st.session_state:
     st.session_state['pagina'] = 'inicial'
@@ -38,11 +38,11 @@ def mudar_pagina(pagina):
 # --- 2. NAVEGAÇÃO NA BARRA LATERAL (SIDEBAR) ---
 
 st.sidebar.title('Menu de Navegação')
-st.sidebar.button('Página Inicial', on_click=mudar_pagina, use_container_width=True, args=('inicial',))
-st.sidebar.button('Adicionar Usuário', on_click=mudar_pagina, use_container_width=True, args=('adicionar',))
-st.sidebar.button('Gerenciar Usuários (Editar/Excluir)', on_click=mudar_pagina, use_container_width=True, args=('gerenciar',))
-st.sidebar.button('Listar Usuários', on_click=mudar_pagina, use_container_width=True, args=('listar',))
-st.sidebar.button('Gerar Dashboard', on_click=mudar_pagina, use_container_width=True, args=('dashboard',))
+st.sidebar.button('Página Inicial', on_click=mudar_pagina, width='stretch', args=('inicial',))
+st.sidebar.button('Adicionar Usuário', on_click=mudar_pagina, width='stretch', args=('adicionar',))
+st.sidebar.button('Gerenciar Usuários (Editar/Excluir)', on_click=mudar_pagina, width='stretch', args=('gerenciar',))
+st.sidebar.button('Listar Usuários', on_click=mudar_pagina, width='stretch', args=('listar',))
+st.sidebar.button('Gerar Dashboard', on_click=mudar_pagina, width='stretch', args=('dashboard',))
 
 # --- 3. DEFINIÇÃO DAS PÁGINAS ---
 
@@ -118,7 +118,7 @@ def pagina_listar():
                 beneficiarios,
                 columns=['ID', 'Nome', 'CPF', 'Data Nascimento']
             )
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width='stretch')
     except Exception as e:
         st.error(f'Erro ao listar beneficiários: {e}')
 
@@ -170,7 +170,12 @@ def pagina_gerenciar():
                 nacionalidade = st.text_input('Nacionalidade:', value=dados_usuario.get('nacionalidade', ''))
                 telefone = st.text_input('Telefone:', value=dados_usuario.get('telefone', ''))
                 email = st.text_input('E-mail:', value=dados_usuario.get('email', ''))
-
+                st.subheader('Endereços')
+                endereco_residencial = st.text_area('Endereço residencial:', 
+                                                    value=dados_usuario.get('endereco_residencial', ''))
+                endereco_trabalho = st.text_area('Endereço do trabalho:', 
+                                                 value=dados_usuario.get('endereco_trabalho', ''))
+                
                 update_button = st.form_submit_button(label='Atualizar Dados')
 
                 if update_button:
@@ -179,8 +184,8 @@ def pagina_gerenciar():
                         p_atualizada = Pessoa(
                             nome, filiacao1, filiacao2, data_nasc_str, doc_identidade,
                             nacionalidade, telefone, email,
-                            '', '', # Endereços não gerenciados no db
-                            cpf, id_beneficiario=id_selecionado # Passa o ID
+                            endereco_residencial, endereco_trabalho, # <--- CORRIGIDO
+                            cpf, id_beneficiario=id_selecionado 
                         )
                         
                         atualizar_beneficiario(p_atualizada)

@@ -1,154 +1,129 @@
-import sqlite3
+import streamlit as st
+from supabase import create_client, Client
+from pessoa import Pessoa
 
-def get_conexao():
-    return sqlite3.connect("banco.db")
-
-def inicializar_banco():
-    """Executa o script SQL se o banco ainda não existir."""
-    conexao = get_conexao()
-    cursor = conexao.cursor()
+# Função para inicializar o cliente Supabase
+# @st.cache_resource é crucial para manter uma única conexão
+@st.cache_resource
+def get_supabase_client() -> Client:
+    """
+    Cria e retorna o cliente Supabase usando as credenciais
+    armazenadas no st.secrets.
+    """
     try:
-        with open("bd_caf.sql", "r", encoding="utf-8") as f:
-            script_sql = f.read()
-        cursor.executescript(script_sql)
-        conexao.commit()
-        print("Banco inicializado com sucesso.")
-    except Exception as e:
-        print(f"Erro ao inicializar banco: {e}")
-    finally:
-        conexao.close()
-
-def inserir_beneficiario(pessoa):
-    conexao = get_conexao()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    INSERT INTO beneficiarios
-    (nome, filiacao1, filiacao2, cpf, data_nascimento, documento_identidade, nacionalidade, email)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        pessoa.nome,
-        pessoa.filiacao1,
-        pessoa.filiacao2,
-        pessoa.cpf,
-        pessoa.data_nasc,
-        pessoa.doc_identidade,
-        pessoa.nacionalidade,
-        pessoa.email
-    ))
-
-    id_beneficiario = cursor.lastrowid
-
-    # Simples: telefone armazenado em um campo único
-    cursor.execute("""
-    INSERT INTO telefone (codigo_pais, ddd, numero, descricao, fk_beneficiarios_id_beneficiario)
-    VALUES (?, ?, ?, ?, ?)
-    """, (55, 11, pessoa.telefone, "Residencial", id_beneficiario))
-
-    conexao.commit()
-    conexao.close()
-    return id_beneficiario
-
-def listar_beneficiarios():
-    conexao = get_conexao()
-    cursor = conexao.cursor()
-    cursor.execute("""
-        SELECT id_beneficiario, nome, cpf, data_nascimento 
-        FROM beneficiarios
-    """)
-    resultados = cursor.fetchall()
-    conexao.close()
-    return resultados
-
-def buscar_beneficiario_por_id(id_beneficiario):
-    """Busca um beneficiário completo pelo ID, incluindo o telefone."""
-    conexao = get_conexao()
-    cursor = conexao.cursor()
-    
-    cursor.execute("""
-        SELECT 
-            b.id_beneficiario, b.nome, b.filiacao1, b.filiacao2, b.cpf, 
-            b.data_nascimento, b.documento_identidade, b.nacionalidade, b.email,
-            t.numero as telefone
-        FROM 
-            beneficiarios b
-        LEFT JOIN 
-            telefone t ON b.id_beneficiario = t.fk_beneficiarios_id_beneficiario
-        WHERE 
-            b.id_beneficiario = ?
-        LIMIT 1
-    """, (id_beneficiario,))
-    
-    resultado = cursor.fetchone()
-    
-    if resultado:
-        # Converte a tupla em um dicionário para facilitar o uso
-        colunas = [desc[0] for desc in cursor.description]
-        conexao.close()
-        return dict(zip(colunas, resultado))
-    
-    conexao.close()
-    return None
-
-def atualizar_beneficiario(pessoa):
-    """Atualiza os dados de um beneficiário e seu telefone."""
-    conexao = get_conexao()
-    cursor = conexao.cursor()
-    
-    try:
-        # 1. Atualiza a tabela 'beneficiarios'
-        cursor.execute("""
-        UPDATE beneficiarios
-        SET 
-            nome = ?, filiacao1 = ?, filiacao2 = ?, cpf = ?, 
-            data_nascimento = ?, documento_identidade = ?, 
-            nacionalidade = ?, email = ?
-        WHERE 
-            id_beneficiario = ?
-        """, (
-            pessoa.nome, pessoa.filiacao1, pessoa.filiacao2, pessoa.cpf,
-            pessoa.data_nasc, pessoa.doc_identidade, pessoa.nacionalidade,
-            pessoa.email, pessoa.id_beneficiario
-        ))
-        
-        # 2. Atualiza ou Insere o telefone
-        if pessoa.telefone:
-            cursor.execute("""
-            UPDATE telefone SET numero = ?
-            WHERE fk_beneficiarios_id_beneficiario = ?
-            """, (pessoa.telefone, pessoa.id_beneficiario))
+        supabase_url = st.secrets["supabase_url"]
+        supabase_key = st.secrets["supabase_key"]
             
-            # Se 'rowcount' for 0, o beneficiário não tinha telefone; então, insira
-            if cursor.rowcount == 0:
-                 cursor.execute("""
-                 INSERT INTO telefone (codigo_pais, ddd, numero, descricao, fk_beneficiarios_id_beneficiario)
-                 VALUES (?, ?, ?, ?, ?)
-                 """, (55, 48, pessoa.telefone, "Celular", pessoa.id_beneficiario))
-
-        conexao.commit()
+        if not supabase_url or not supabase_key:
+            raise ValueError("Credenciais do Supabase não encontradas no st.secrets")
+                
+        return create_client(supabase_url, supabase_key)
+        
     except Exception as e:
-        conexao.rollback()
-        raise e
-    finally:
-        conexao.close()
+        st.error(f"Erro ao conectar com Supabase: {e}")
+        return None
 
-def deletar_beneficiario(id_beneficiario):
-    """Deleta um beneficiário e seus dados associados (telefone, etc.)."""
-    conexao = get_conexao()
-    cursor = conexao.cursor()
-    
+    # Função de inicialização não é mais necessária para criar tabelas,
+    # mas podemos usá-la para verificar a conexão.
+def inicializar_banco():
+    """
+    Verifica se o cliente Supabase pode ser obtido.
+    A tabela agora é gerenciada no dashboard do Supabase.
+    """
+    client = get_supabase_client()
+    if client:
+        print("Conexão com Supabase estabelecida com sucesso.")
+        return True
+    else:
+        print("Falha ao estabelecer conexão com Supabase.")
+        return False
+
+def inserir_beneficiario(p: Pessoa) -> int:
+    """
+    Insere um novo beneficiário no banco de dados Supabase.
+    Retorna o ID do beneficiário inserido.
+    """
+    client = get_supabase_client()
+    dados_dict = p.to_dict()
+        
     try:
-        # 1. Deleta das tabelas "filhas" primeiro (devido ao ON DELETE RESTRICT)
-        cursor.execute("DELETE FROM telefone WHERE fk_beneficiarios_id_beneficiario = ?", (id_beneficiario,))
-        cursor.execute("DELETE FROM atendimentos WHERE fk_beneficiarios_id_beneficiario = ?", (id_beneficiario,))
-        cursor.execute("DELETE FROM endereco_beneficiario_tem WHERE fk_beneficiarios_id_beneficiario = ?", (id_beneficiario,))
-        
-        # 2. Deleta da tabela "pai" (beneficiarios)
-        cursor.execute("DELETE FROM beneficiarios WHERE id_beneficiario = ?", (id_beneficiario,))
-        
-        conexao.commit()
+        # .insert() insere os dados.
+        # .execute() envia a requisição.
+        response = client.table('beneficiarios').insert(dados_dict).execute()
+            
+        if response.data:
+            # Retorna o ID do registro inserido
+            id_gerado = response.data[0]['id']
+            return id_gerado
+        else:
+            raise Exception("Nenhum dado retornado do Supabase após inserção.")
+                
     except Exception as e:
-        conexao.rollback()
-        raise e
-    finally:
-        conexao.close()
+        raise Exception(f"Erro ao inserir no Supabase: {e}")
+
+def listar_beneficiarios() -> list:
+    """
+    Lista ID, Nome, CPF e Data de Nascimento de todos os beneficiários.
+    """
+    client = get_supabase_client()
+    try:
+        # Seleciona colunas específicas
+        response = client.table('beneficiarios').select('id, nome, cpf, data_nascimento').execute()
+            
+        # O .data já é uma lista de dicionários, perfeito para o Pandas
+        return response.data
+            
+    except Exception as e:
+        raise Exception(f"Erro ao listar no Supabase: {e}")
+    
+def buscar_beneficiario_por_id(id_beneficiario: int) -> dict:
+    """
+    Busca um beneficiário completo pelo seu ID.
+    Retorna um dicionário.
+    """
+    client = get_supabase_client()
+    try:
+        # .eq() é o "equals" (onde id = id_beneficiario)
+        # .single() garante que apenas um resultado é esperado
+        response = client.table('beneficiarios').select('*').eq('id', id_beneficiario).single().execute()
+            
+        return response.data # Já é um dicionário
+            
+    except Exception as e:
+        raise Exception(f"Erro ao buscar por ID no Supabase: {e}")
+
+def atualizar_beneficiario(p: Pessoa):
+    """
+    Atualiza um beneficiário existente com base no seu ID.
+    """
+    client = get_supabase_client()
+    dados_dict = p.to_dict()
+        
+    try:
+        # .update() atualiza os dados
+        # .eq() especifica o WHERE
+        response = client.table('beneficiarios').update(dados_dict).eq('id', p.id_beneficiario).execute()
+            
+        if not response.data:
+                raise Exception("Falha ao atualizar: beneficiário não encontrado ou erro na query.")
+
+    except Exception as e:
+        raise Exception(f"Erro ao atualizar no Supabase: {e}")
+
+def deletar_beneficiario(id_beneficiario: int):
+    """
+    Deleta um beneficiário pelo seu ID.
+    """
+    client = get_supabase_client()
+    try:
+        # .delete() deleta
+        # .eq() especifica o WHERE
+        response = client.table('beneficiarios').delete().eq('id', id_beneficiario).execute()
+            
+        if not response.data:
+                raise Exception("Falha ao deletar: beneficiário não encontrado ou erro na query.")
+
+    except Exception as e:
+        # Supabase pode falhar se houver restrições de chave estrangeira
+        # (ex: atendimentos vinculados)
+        raise Exception(f"Erro ao deletar no Supabase: {e}")
